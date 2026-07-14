@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "web-solution-sydney",
+  "compatibility_date": "2026-07-14",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "dist/server/index.mjs",
+  "no_bundle": true,
+  "rules": [
+    { "type": "ESModule", "globs": ["**/*.mjs", "**/*.js"] }
+  ],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "dist/client"
+  },
+  "observability": {
+    "enabled": true
+  }
+}
