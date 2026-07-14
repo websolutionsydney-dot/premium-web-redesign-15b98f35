@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/SiteLayout";
-import { Check, ArrowUpRight } from "lucide-react";
+import { Check, ArrowUpRight, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/packages")({
   head: () => ({
@@ -62,11 +62,12 @@ const PLANS = [
 function Packages() {
   return (
     <SiteLayout>
-      <section className="border-b border-[color:var(--border)]">
+      <section className="relative overflow-hidden bg-soft border-b border-[color:var(--border)]">
+        <div className="absolute inset-0 -z-10 grid-pattern opacity-40" />
         <div className="container-editorial pt-24 pb-24">
           <div className="eyebrow">Packages</div>
-          <h1 className="mt-8 font-display text-[clamp(3rem,7vw,6.5rem)] leading-[0.98] tracking-tight max-w-5xl">
-            One price. One website.<br /><span className="italic text-[color:var(--gold)]">Yours to keep.</span>
+          <h1 className="mt-8 font-display text-[clamp(2.75rem,6.5vw,6rem)] leading-[1] tracking-tight max-w-5xl">
+            One price. One website. <span className="italic gradient-text">Yours to keep.</span>
           </h1>
           <p className="mt-8 max-w-2xl text-lg text-muted-foreground leading-relaxed">
             No subscriptions. No lock-in. Every package is a once-off — the website is
@@ -81,28 +82,31 @@ function Packages() {
             {PLANS.map((p) => (
               <div
                 key={p.name}
-                className={`relative rounded-2xl border p-10 flex flex-col ${
+                className={`relative rounded-3xl p-10 flex flex-col transition ${
                   p.highlighted
-                    ? "border-[color:var(--gold)] bg-[color:var(--ink)]"
-                    : "border-[color:var(--border)] bg-[color:var(--card)]"
+                    ? "text-white shadow-[var(--shadow-lift)] scale-100 md:scale-[1.02]"
+                    : "card-soft"
                 }`}
+                style={p.highlighted ? { background: "var(--gradient-brand)" } : undefined}
               >
                 {p.highlighted && (
-                  <span className="absolute -top-3 left-10 rounded-full bg-[color:var(--gold)] px-3 py-1 text-[10px] uppercase tracking-widest text-[color:var(--ink)] font-medium">
-                    Most popular
+                  <span className="absolute -top-3 left-10 inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[10px] uppercase tracking-widest text-[color:var(--brand-deep)] font-medium shadow-[var(--shadow-soft)]">
+                    <Sparkles className="h-3 w-3" /> Most popular
                   </span>
                 )}
-                <div className="eyebrow">{p.name} plan</div>
+                <div className={`text-xs uppercase tracking-[0.22em] font-medium ${p.highlighted ? "text-white/85" : "text-[color:var(--brand)]"}`}>{p.name} plan</div>
                 <div className="mt-6 flex items-baseline gap-2">
-                  <span className="font-display text-7xl text-[color:var(--gold)]">${p.price}</span>
-                  <span className="text-xs uppercase tracking-widest text-muted-foreground">once</span>
+                  <span className={`font-display text-7xl ${p.highlighted ? "text-white" : "gradient-text"}`}>${p.price}</span>
+                  <span className={`text-xs uppercase tracking-widest ${p.highlighted ? "text-white/70" : "text-muted-foreground"}`}>once</span>
                 </div>
-                <p className="mt-4 text-muted-foreground">{p.tagline}</p>
+                <p className={`mt-4 ${p.highlighted ? "text-white/85" : "text-muted-foreground"}`}>{p.tagline}</p>
 
                 <ul className="mt-8 space-y-3 flex-1">
                   {p.features.map((f) => (
                     <li key={f} className="flex items-start gap-3 text-sm">
-                      <Check className="h-4 w-4 text-[color:var(--gold)] mt-0.5 shrink-0" />
+                      <span className={`grid h-5 w-5 place-items-center rounded-full mt-0.5 shrink-0 ${p.highlighted ? "bg-white/20" : "bg-[color:var(--brand-soft)]"}`}>
+                        <Check className={`h-3 w-3 ${p.highlighted ? "text-white" : "text-[color:var(--brand)]"}`} />
+                      </span>
                       <span>{f}</span>
                     </li>
                   ))}
@@ -110,7 +114,11 @@ function Packages() {
 
                 <Link
                   to="/contact"
-                  className={`mt-10 ${p.highlighted ? "btn-gold" : "btn-ghost"} justify-center`}
+                  className={
+                    p.highlighted
+                      ? "mt-10 inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-medium text-[color:var(--brand-deep)] hover:-translate-y-0.5 transition"
+                      : "btn-brand mt-10 justify-center"
+                  }
                 >
                   Begin {p.name}
                   <ArrowUpRight className="h-4 w-4" />
@@ -121,16 +129,16 @@ function Packages() {
         </div>
       </section>
 
-      <section className="border-t border-[color:var(--border)] bg-[color:var(--ink)]">
+      <section className="border-t border-[color:var(--border)] bg-[color:var(--surface)]">
         <div className="container-editorial py-24 grid md:grid-cols-2 gap-16 items-center">
-          <h2 className="font-display text-5xl leading-tight">Need something more <span className="italic text-[color:var(--gold)]">bespoke?</span></h2>
+          <h2 className="font-display text-5xl leading-tight">Need something more <span className="italic gradient-text">bespoke?</span></h2>
           <div>
             <p className="text-muted-foreground leading-relaxed">
               Complex integrations, membership platforms, headless commerce, custom
               apps — we quote these individually. Send us a note and we'll come back
               with a considered proposal.
             </p>
-            <Link to="/contact" className="btn-gold mt-8">Request a custom quote <ArrowUpRight className="h-4 w-4" /></Link>
+            <Link to="/contact" className="btn-brand mt-8">Request a custom quote <ArrowUpRight className="h-4 w-4" /></Link>
           </div>
         </div>
       </section>

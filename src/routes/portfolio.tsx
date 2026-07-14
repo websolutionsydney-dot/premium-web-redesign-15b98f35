@@ -25,11 +25,12 @@ function Portfolio() {
 
   return (
     <SiteLayout>
-      <section className="border-b border-[color:var(--border)]">
+      <section className="relative overflow-hidden bg-soft border-b border-[color:var(--border)]">
+        <div className="absolute inset-0 -z-10 grid-pattern opacity-40" />
         <div className="container-editorial pt-24 pb-16">
           <div className="eyebrow">Portfolio · {PROJECTS.length} projects</div>
-          <h1 className="mt-8 font-display text-[clamp(3rem,7vw,6.5rem)] leading-[0.98] tracking-tight max-w-5xl">
-            The work<br />speaks <span className="italic text-[color:var(--gold)]">for itself.</span>
+          <h1 className="mt-8 font-display text-[clamp(2.75rem,6.5vw,6rem)] leading-[1] tracking-tight max-w-5xl">
+            The work<br />speaks <span className="italic gradient-text">for itself.</span>
           </h1>
         </div>
       </section>
@@ -43,9 +44,10 @@ function Portfolio() {
               onClick={() => setCat(c)}
               className={`shrink-0 rounded-full border px-4 py-2 text-xs uppercase tracking-widest transition ${
                 cat === c
-                  ? "border-[color:var(--gold)] bg-[color:var(--gold)] text-[color:var(--ink)]"
-                  : "border-[color:var(--border)] text-muted-foreground hover:text-[color:var(--gold)] hover:border-[color:var(--gold)]"
+                  ? "border-transparent text-white shadow-[var(--shadow-soft)]"
+                  : "border-[color:var(--border)] bg-white text-muted-foreground hover:text-[color:var(--brand)] hover:border-[color:var(--brand)]"
               }`}
+              style={cat === c ? { background: "var(--gradient-brand)" } : undefined}
             >
               {c}
             </button>
@@ -55,7 +57,7 @@ function Portfolio() {
 
       <section>
         <div className="container-editorial py-16">
-          <div className="grid gap-x-8 gap-y-16 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-x-8 gap-y-14 md:grid-cols-2 lg:grid-cols-3">
             {filtered.map((p, i) => (
               <a
                 key={p.name}
@@ -64,15 +66,14 @@ function Portfolio() {
                 rel="noreferrer"
                 className="group block"
               >
-                <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-[color:var(--card)] border border-[color:var(--border)]">
+                <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] shadow-[var(--shadow-soft)] group-hover:shadow-[var(--shadow-lift)] transition">
                   <img
                     src={p.image}
                     alt={p.name}
                     loading={i < 3 ? "eager" : "lazy"}
                     className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[color:var(--ink)]/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition" />
-                  <div className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--gold)] text-[color:var(--ink)] opacity-0 -translate-y-1 transition group-hover:opacity-100 group-hover:translate-y-0">
+                  <div className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full text-white opacity-0 -translate-y-1 transition group-hover:opacity-100 group-hover:translate-y-0" style={{ background: "var(--gradient-brand)" }}>
                     <ArrowUpRight className="h-4 w-4" />
                   </div>
                 </div>
@@ -83,7 +84,7 @@ function Portfolio() {
                   </span>
                 </div>
                 <div className="mt-1 flex items-center justify-between gap-4">
-                  <span className="text-xs uppercase tracking-widest text-[color:var(--gold)]">{p.category}</span>
+                  <span className="text-xs uppercase tracking-widest text-[color:var(--brand)]">{p.category}</span>
                   <span className="text-xs text-muted-foreground truncate max-w-[60%]">
                     {new URL(p.url).hostname.replace(/^www\./, "")}
                   </span>
@@ -100,10 +101,10 @@ function Portfolio() {
 
       <section className="border-t border-[color:var(--border)]">
         <div className="container-editorial py-24 text-center">
-          <h2 className="font-display text-[clamp(2rem,6vw,5rem)] leading-[1] max-w-4xl mx-auto">
-            Yours could be <span className="italic text-[color:var(--gold)]">next.</span>
+          <h2 className="font-display text-[clamp(2rem,6vw,4.5rem)] leading-[1] max-w-4xl mx-auto">
+            Yours could be <span className="italic gradient-text">next.</span>
           </h2>
-          <Link to="/contact" className="btn-gold mt-10">Start a project <ArrowUpRight className="h-4 w-4" /></Link>
+          <Link to="/contact" className="btn-brand mt-10">Start a project <ArrowUpRight className="h-4 w-4" /></Link>
         </div>
       </section>
     </SiteLayout>
