@@ -96,8 +96,20 @@ function Portfolio() {
           {filtered.length === 0 && (
             <p className="text-center text-muted-foreground py-24">No projects in this category yet.</p>
           )}
+
+          <div className="mt-16 flex justify-center">
+            <a
+              href="https://designs.websolutionsydney.com.au"
+              target="_blank"
+              rel="noreferrer"
+              className="btn-brand"
+            >
+              More designs <ArrowUpRight className="h-4 w-4" />
+            </a>
+          </div>
         </div>
       </section>
+
 
       <section className="border-t border-[color:var(--border)]">
         <div className="container-editorial py-24 text-center">
