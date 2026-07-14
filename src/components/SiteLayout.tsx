@@ -36,14 +36,14 @@ function Header() {
     >
       <div
         className={`container-editorial flex items-center justify-between gap-6 transition-all duration-300 ${
-          compact ? "h-20" : "h-32"
+          compact ? "py-3" : "py-6"
         }`}
       >
         <Link to="/" className="flex items-center gap-3 shrink-0">
           <img
             src={LOGO_URL}
             alt="Web Solution Sydney"
-            className={`w-auto transition-all duration-300 ${compact ? "h-11" : "h-20"}`}
+            className={`w-auto block transition-all duration-300 ${compact ? "h-10 md:h-12" : "h-14 md:h-20"}`}
           />
         </Link>
 
@@ -169,7 +169,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      <main className="flex-1 pt-20">{children}</main>
+      <main className="flex-1 pt-28 md:pt-36">{children}</main>
       <Footer />
     </div>
   );
