@@ -40,7 +40,7 @@ function Contact() {
           <aside className="lg:col-span-4 space-y-4">
             {[
               { icon: Phone, label: "Phone", value: PHONE, href: PHONE_HREF },
-              { icon: Mail, label: "Email", value: "hello@websolutionsydney.com.au", href: "mailto:hello@websolutionsydney.com.au" },
+              { icon: Mail, label: "Email", value: "ryan@websolutionsydney.com.au", href: "mailto:ryan@websolutionsydney.com.au" },
               { icon: MapPin, label: "Studio", value: "Sydney, Australia" },
               { icon: Clock, label: "Response", value: "Within 1 working day" },
             ].map((item) => {
