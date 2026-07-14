@@ -98,17 +98,13 @@ function Portfolio() {
           )}
 
           <div className="mt-16 flex justify-center">
-            <a
-              href="https://designs.websolutionsydney.com.au"
-              target="_blank"
-              rel="noreferrer"
-              className="btn-brand"
-            >
-              More designs <ArrowUpRight className="h-4 w-4" />
-            </a>
+            <Link to="/designs" className="btn-brand">
+              Explore full design catalog <ArrowUpRight className="h-4 w-4" />
+            </Link>
           </div>
         </div>
       </section>
+
 
 
       <section className="border-t border-[color:var(--border)]">
