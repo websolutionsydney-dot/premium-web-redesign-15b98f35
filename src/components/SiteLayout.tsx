@@ -27,13 +27,7 @@ function Header() {
   const compact = scrolled || open;
 
   return (
-    <header
-      className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
-        compact
-          ? "bg-white/85 backdrop-blur-md border-b border-[color:var(--border)] shadow-[var(--shadow-soft)]"
-          : "bg-transparent border-b border-transparent"
-      }`}
-    >
+    <header className="fixed top-0 inset-x-0 z-50 bg-transparent">
       <div
         className={`container-editorial flex items-center justify-between gap-6 transition-all duration-300 ${
           compact ? "py-3" : "py-6"
