@@ -33,3 +33,6 @@ export const CATEGORIES = ["All", ...Array.from(new Set(PROJECTS.map((p) => p.ca
 export const LOGO_URL = "https://websolutionsydney.com.au/wp-content/uploads/2023/03/logo.png";
 export const PHONE = "0420 102 599";
 export const PHONE_HREF = "tel:+61420102599";
+export const EMAIL = "ryan@websolutionsydney.com.au";
+export const EMAIL_HREF = "mailto:ryan@websolutionsydney.com.au";
+
