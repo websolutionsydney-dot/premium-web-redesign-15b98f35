@@ -30,7 +30,7 @@ export const PROJECTS: Project[] = [
 
 export const CATEGORIES = ["All", ...Array.from(new Set(PROJECTS.map((p) => p.category)))];
 
-export const LOGO_URL = "https://websolutionsydney.com.au/wp-content/uploads/2023/03/logo.png";
+export const LOGO_URL = "/logo.png";
 export const PHONE = "0420 102 599";
 export const PHONE_HREF = "tel:+61420102599";
 export const EMAIL = "ryan@websolutionsydney.com.au";
