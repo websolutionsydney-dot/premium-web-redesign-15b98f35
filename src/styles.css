@@ -159,6 +159,11 @@
   background-size: 22px 22px;
 }
 
+@utility mask-fade {
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+}
+
 @utility glass {
   background: color-mix(in oklab, white 75%, transparent);
   backdrop-filter: blur(16px) saturate(1.2);
