@@ -241,6 +241,6 @@ export const DESIGN_CATEGORIES: DesignCategory[] = [
 ];
 
 export const thumbFor = (url: string) =>
-  `https://image.thum.io/get/width/900/crop/700/noanimate/${url}`;
+  `https://s.wordpress.com/mshots/v1/${encodeURIComponent(url)}?w=900&h=700`;
 
 export const ALL_DESIGNS_COUNT = DESIGN_CATEGORIES.reduce((n, c) => n + c.designs.length, 0);
