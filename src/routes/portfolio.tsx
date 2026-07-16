@@ -71,6 +71,16 @@ function Portfolio() {
                     src={p.image}
                     alt={p.name}
                     loading={i < 3 ? "eager" : "lazy"}
+                    onError={(e) => {
+                      const img = e.currentTarget;
+                      const tries = Number(img.dataset.tries || 0);
+                      if (tries < 2) {
+                        img.dataset.tries = String(tries + 1);
+                        setTimeout(() => { img.src = p.image + `&r=${tries + 1}`; }, 1200);
+                      } else {
+                        img.style.display = "none";
+                      }
+                    }}
                     className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                   />
                   <div className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full text-white opacity-0 -translate-y-1 transition group-hover:opacity-100 group-hover:translate-y-0" style={{ background: "var(--gradient-brand)" }}>
