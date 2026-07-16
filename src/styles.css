@@ -70,9 +70,9 @@
   --shadow-soft: 0 1px 2px oklch(0.45 0.13 235 / 6%), 0 8px 24px -8px oklch(0.45 0.13 235 / 14%);
   --shadow-lift: 0 4px 12px oklch(0.45 0.13 235 / 10%), 0 24px 60px -20px oklch(0.45 0.13 235 / 22%);
   --gradient-brand: linear-gradient(135deg, oklch(0.72 0.14 220) 0%, oklch(0.65 0.15 235) 50%, oklch(0.5 0.14 240) 100%);
-  --gradient-soft: radial-gradient(circle at 8rem 4.75rem, oklch(1 0 0 / 0.98) 0 4.75rem, oklch(0.96 0.04 225 / 0.9) 8.5rem, transparent 18rem),
-                   radial-gradient(ellipse at 72% 10%, oklch(0.82 0.1 225 / 0.5) 0%, transparent 45%),
-                   linear-gradient(145deg, oklch(0.82 0.1 225) 0%, oklch(0.92 0.055 225) 36%, oklch(0.99 0.006 240) 78%);
+  --gradient-soft: radial-gradient(ellipse 32rem 14rem at 10% 0%, oklch(1 0 0 / 1) 0%, oklch(1 0 0 / 0.85) 30%, oklch(0.98 0.02 225 / 0) 70%),
+                   radial-gradient(ellipse at 78% 8%, oklch(0.82 0.1 225 / 0.45) 0%, transparent 50%),
+                   linear-gradient(145deg, oklch(0.86 0.08 225) 0%, oklch(0.94 0.045 225) 40%, oklch(0.99 0.006 240) 80%);
 
 }
 
