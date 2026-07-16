@@ -154,7 +154,45 @@
   background-size: 40px 40px;
 }
 
+@utility dot-pattern {
+  background-image: radial-gradient(oklch(0.6 0.2 255 / 15%) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+@utility glass {
+  background: color-mix(in oklab, white 75%, transparent);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  @apply border border-white/60 rounded-2xl;
+}
+
+@utility ring-brand {
+  box-shadow:
+    0 0 0 1px oklch(0.65 0.15 235 / 0.25),
+    0 20px 60px -20px oklch(0.45 0.13 235 / 0.35);
+}
+
+@utility marquee-track {
+  animation: marquee 40s linear infinite;
+  @apply flex gap-16 w-max;
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0) rotate(var(--tw-rotate, 0)); }
+  50% { transform: translateY(-10px) rotate(var(--tw-rotate, 0)); }
+}
+
+@utility animate-float {
+  animation: float-slow 6s ease-in-out infinite;
+}
+
 @utility no-scrollbar {
   scrollbar-width: none;
   &::-webkit-scrollbar { display: none; }
 }
+
