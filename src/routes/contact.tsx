@@ -17,7 +17,44 @@ export const Route = createFileRoute("/contact")({
 });
 
 function Contact() {
-  const [sent, setSent] = useState(false);
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [errorMsg, setErrorMsg] = useState<string>("");
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (status === "sending") return;
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+    const payload = {
+      name: String(fd.get("name") || ""),
+      email: String(fd.get("email") || ""),
+      company: String(fd.get("company") || ""),
+      phone: String(fd.get("phone") || ""),
+      project: fd.getAll("project").map(String),
+      brief: String(fd.get("brief") || ""),
+    };
+    setStatus("sending");
+    setErrorMsg("");
+    try {
+      const res = await fetch("/api/quote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+      if (!res.ok || !data.ok) {
+        setStatus("error");
+        setErrorMsg(data.error || "Something went wrong. Please try again or call us.");
+        return;
+      }
+      setStatus("sent");
+      form.reset();
+    } catch {
+      setStatus("error");
+      setErrorMsg("Network error. Please try again or call us.");
+    }
+  }
+
 
   return (
     <SiteLayout>
