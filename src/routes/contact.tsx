@@ -104,7 +104,7 @@ function Contact() {
 
           <form
             className="lg:col-span-8 card-soft p-8 md:p-10 space-y-8"
-            onSubmit={(e) => { e.preventDefault(); setSent(true); }}
+            onSubmit={handleSubmit}
           >
             <div className="grid md:grid-cols-2 gap-6">
               <Field label="Your name" name="name" required />
