@@ -140,11 +140,12 @@ function Contact() {
             </div>
 
             <div className="flex flex-wrap items-center gap-4 pt-2">
-              <button type="submit" className="btn-brand">
-                {sent ? "Thanks — we'll be in touch" : "Send brief"} <ArrowUpRight className="h-4 w-4" />
+              <button type="submit" disabled={status === "sending"} className="btn-brand disabled:opacity-70">
+                {status === "sending" ? "Sending…" : status === "sent" ? "Thanks — we'll be in touch" : "Send brief"} <ArrowUpRight className="h-4 w-4" />
               </button>
               <p className="text-xs text-muted-foreground">Or call <a href={PHONE_HREF} className="text-[color:var(--brand)] hover:underline font-medium">{PHONE}</a>.</p>
             </div>
+            {status === "error" && <p className="text-sm text-red-600">{errorMsg}</p>}
           </form>
         </div>
       </section>
