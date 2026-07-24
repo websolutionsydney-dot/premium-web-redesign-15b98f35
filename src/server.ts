@@ -47,14 +47,16 @@ function isH3SwallowedErrorBody(body: string): boolean {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
-      // Redirect the payments subdomain to the /pay page on the primary domain.
+      // Serve the /pay page on the payments subdomain without changing the URL.
       const url = new URL(request.url);
       if (url.hostname === "payments.websolutionsydney.com.au") {
-        const target = new URL(request.url);
-        target.hostname = "websolutionsydney.com.au";
-        target.pathname = "/pay";
-        return Response.redirect(target.toString(), 301);
+        const rewritten = new URL(request.url);
+        if (rewritten.pathname === "/" || rewritten.pathname === "") {
+          rewritten.pathname = "/pay";
+          request = new Request(rewritten.toString(), request);
+        }
       }
+
 
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
