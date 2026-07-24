@@ -3,11 +3,6 @@ import { useState } from "react";
 import {
   PayPalScriptProvider,
   PayPalButtons,
-  PayPalCardFieldsProvider,
-  PayPalNumberField,
-  PayPalExpiryField,
-  PayPalCVVField,
-  usePayPalCardFields,
 } from "@paypal/react-paypal-js";
 import { SiteLayout } from "@/components/SiteLayout";
 import { Lock, ShieldCheck, CreditCard } from "lucide-react";
@@ -47,6 +42,7 @@ function PayPage() {
 
   const numericAmount = Number(amount);
   const validAmount = Number.isFinite(numericAmount) && numericAmount > 0;
+  const amountFixed = validAmount ? numericAmount.toFixed(2) : "0.00";
 
   return (
     <SiteLayout>
@@ -88,7 +84,7 @@ function PayPage() {
               <div className="my-8 flex items-center gap-4">
                 <div className="h-px flex-1 bg-[color:var(--border)]" />
                 <span className="text-xs uppercase tracking-widest text-muted-foreground">
-                  Pay with card
+                  Choose payment method
                 </span>
                 <div className="h-px flex-1 bg-[color:var(--border)]" />
               </div>
@@ -96,56 +92,27 @@ function PayPage() {
               {!validAmount ? (
                 <div className="rounded-xl border border-dashed border-[color:var(--border)] bg-[color:var(--surface)] p-6 text-center text-sm text-muted-foreground">
                   <CreditCard className="mx-auto mb-2 h-5 w-5 text-[color:var(--brand)]" />
-                  Enter an amount above to load secure card fields.
+                  Enter an amount above to continue to secure payment.
                 </div>
               ) : (
                 <PayPalScriptProvider
                   options={{
                     clientId: CLIENT_ID,
                     currency: "AUD",
-                    components: "buttons,card-fields",
                     intent: "capture",
+                    components: "buttons",
+                    "enable-funding": "card",
                   }}
                 >
-                  <PayPalCardFieldsProvider
-                    createOrder={async () => {
-                      // Client-side order creation via PayPal SDK actions is unavailable
-                      // for card fields without a server. We use the JS SDK's order
-                      // creation endpoint through a lightweight wrapper.
-                      throw new Error("server_required");
-                    }}
-                    onApprove={async () => {
-                      setStatus({ kind: "success", id: "" });
-                    }}
-                    onError={(err) => {
-                      setStatus({
-                        kind: "error",
-                        message: (err as Error)?.message || "Payment failed",
-                      });
-                    }}
-                    style={{
-                      input: {
-                        "font-size": "16px",
-                        "font-family": "Inter, sans-serif",
-                        color: "#0a1a2f",
-                        padding: "12px",
-                      },
-                      ".invalid": { color: "#c0392b" },
-                    }}
-                  >
-                    <CardForm
-                      amount={numericAmount}
-                      setStatus={setStatus}
-                      status={status}
-                    />
-                  </PayPalCardFieldsProvider>
-
-                  <div className="mt-6">
-                    <div className="mb-3 text-center text-xs uppercase tracking-widest text-muted-foreground">
-                      Or pay with PayPal balance
-                    </div>
+                  <div key={amountFixed}>
                     <PayPalButtons
-                      style={{ layout: "horizontal", color: "blue", shape: "pill" }}
+                      style={{
+                        layout: "vertical",
+                        color: "blue",
+                        shape: "rect",
+                        label: "pay",
+                      }}
+                      disabled={status.kind === "processing"}
                       createOrder={(_data, actions) =>
                         actions.order.create({
                           intent: "CAPTURE",
@@ -153,27 +120,41 @@ function PayPage() {
                             {
                               amount: {
                                 currency_code: "AUD",
-                                value: numericAmount.toFixed(2),
+                                value: amountFixed,
                               },
-                              description: "Web Solution Sydney — Invoice",
+                              description: "Web Solution Sydney — Invoice Payment",
                             },
                           ],
                         })
                       }
                       onApprove={async (_data, actions) => {
                         setStatus({ kind: "processing" });
-                        const details = await actions.order?.capture();
-                        setStatus({
-                          kind: "success",
-                          id: details?.id || "",
-                        });
+                        try {
+                          const details = await actions.order?.capture();
+                          setStatus({
+                            kind: "success",
+                            id: details?.id || "",
+                          });
+                        } catch (err) {
+                          setStatus({
+                            kind: "error",
+                            message:
+                              err instanceof Error
+                                ? err.message
+                                : "Capture failed",
+                          });
+                        }
                       }}
                       onError={(err) =>
                         setStatus({
                           kind: "error",
-                          message: (err as Error)?.message || "Payment failed",
+                          message:
+                            err instanceof Error
+                              ? err.message
+                              : "Payment failed. Please try again.",
                         })
                       }
+                      onCancel={() => setStatus({ kind: "idle" })}
                     />
                   </div>
                 </PayPalScriptProvider>
@@ -186,7 +167,8 @@ function PayPage() {
                     Thank you — your payment has been received.
                     {status.id && (
                       <>
-                        {" "}Transaction ID: <span className="font-mono">{status.id}</span>
+                        {" "}Transaction ID:{" "}
+                        <span className="font-mono">{status.id}</span>
                       </>
                     )}
                   </p>
@@ -200,7 +182,7 @@ function PayPage() {
                 </div>
               )}
 
-              <div className="mt-8 flex items-center justify-center gap-6 text-xs text-muted-foreground">
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground">
                 <span className="flex items-center gap-2">
                   <ShieldCheck className="h-4 w-4 text-[color:var(--brand)]" /> 256-bit SSL
                 </span>
@@ -212,75 +194,15 @@ function PayPage() {
             </div>
 
             <p className="mt-6 text-center text-xs text-muted-foreground">
-              Having trouble? Use our{" "}
+              Prefer a hosted checkout?{" "}
               <a href="/quickpay" className="text-[color:var(--brand)] underline">
-                quick PayPal checkout
-              </a>{" "}
-              instead.
+                Use quick PayPal checkout
+              </a>
+              .
             </p>
           </div>
         </div>
       </section>
     </SiteLayout>
-  );
-}
-
-function CardForm({
-  amount,
-  setStatus,
-  status,
-}: {
-  amount: number;
-  setStatus: (s: Status) => void;
-  status: Status;
-}) {
-  const { cardFieldsForm } = usePayPalCardFields();
-
-  const handlePay = async () => {
-    if (!cardFieldsForm) return;
-    const state = await cardFieldsForm.getState();
-    if (!state.isFormValid) {
-      setStatus({
-        kind: "error",
-        message: "Please complete all card fields correctly.",
-      });
-      return;
-    }
-    setStatus({ kind: "processing" });
-    try {
-      await cardFieldsForm.submit();
-    } catch (err) {
-      setStatus({
-        kind: "error",
-        message: (err as Error)?.message || "Card payment failed",
-      });
-    }
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="rounded-xl border border-[color:var(--border)] bg-white p-1">
-        <PayPalNumberField />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="rounded-xl border border-[color:var(--border)] bg-white p-1">
-          <PayPalExpiryField />
-        </div>
-        <div className="rounded-xl border border-[color:var(--border)] bg-white p-1">
-          <PayPalCVVField />
-        </div>
-      </div>
-
-      <button
-        type="button"
-        onClick={handlePay}
-        disabled={status.kind === "processing"}
-        className="btn-brand mt-2 w-full justify-center py-4 text-base disabled:opacity-60"
-      >
-        {status.kind === "processing"
-          ? "Processing…"
-          : `Pay $${amount.toFixed(2)} AUD`}
-      </button>
-    </div>
   );
 }
