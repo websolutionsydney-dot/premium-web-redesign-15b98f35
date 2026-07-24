@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/SiteLayout";
+import { PaymentPage } from "@/components/PaymentPage";
+import { getHostContext } from "@/lib/host.functions";
 import { PROJECTS } from "@/lib/portfolio";
 import {
   ArrowUpRight,
@@ -16,12 +18,15 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
+  loader: () => getHostContext(),
   head: () => ({
     meta: [
       { title: "Web Solution Sydney — Premium Web Design & Development" },
       { name: "description", content: "Sydney's premium web studio. 25 years designing and developing websites, ecommerce and digital brands for Australian businesses." },
       { property: "og:title", content: "Web Solution Sydney — Premium Web Design Studio" },
       { property: "og:description", content: "Websites, ecommerce, and digital identities crafted in Sydney." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Home,
@@ -93,6 +98,12 @@ const clientNames = [
 ];
 
 function Home() {
+  const { isPaymentHost } = Route.useLoaderData();
+
+  if (isPaymentHost) {
+    return <PaymentPage />;
+  }
+
   return (
     <SiteLayout>
       {/* ───────────────────────────── HERO ───────────────────────────── */}
