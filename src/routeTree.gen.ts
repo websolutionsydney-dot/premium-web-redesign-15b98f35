@@ -10,7 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ServicesRouteImport } from './routes/services'
+import { Route as QuickpayRouteImport } from './routes/quickpay'
 import { Route as PortfolioRouteImport } from './routes/portfolio'
+import { Route as PayRouteImport } from './routes/pay'
 import { Route as PackagesRouteImport } from './routes/packages'
 import { Route as DesignsRouteImport } from './routes/designs'
 import { Route as ContactRouteImport } from './routes/contact'
@@ -23,9 +25,19 @@ const ServicesRoute = ServicesRouteImport.update({
   path: '/services',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QuickpayRoute = QuickpayRouteImport.update({
+  id: '/quickpay',
+  path: '/quickpay',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PortfolioRoute = PortfolioRouteImport.update({
   id: '/portfolio',
   path: '/portfolio',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PayRoute = PayRouteImport.update({
+  id: '/pay',
+  path: '/pay',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PackagesRoute = PackagesRouteImport.update({
@@ -65,7 +77,9 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/designs': typeof DesignsRoute
   '/packages': typeof PackagesRoute
+  '/pay': typeof PayRoute
   '/portfolio': typeof PortfolioRoute
+  '/quickpay': typeof QuickpayRoute
   '/services': typeof ServicesRoute
   '/api/quote': typeof ApiQuoteRoute
 }
@@ -75,7 +89,9 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/designs': typeof DesignsRoute
   '/packages': typeof PackagesRoute
+  '/pay': typeof PayRoute
   '/portfolio': typeof PortfolioRoute
+  '/quickpay': typeof QuickpayRoute
   '/services': typeof ServicesRoute
   '/api/quote': typeof ApiQuoteRoute
 }
@@ -86,7 +102,9 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/designs': typeof DesignsRoute
   '/packages': typeof PackagesRoute
+  '/pay': typeof PayRoute
   '/portfolio': typeof PortfolioRoute
+  '/quickpay': typeof QuickpayRoute
   '/services': typeof ServicesRoute
   '/api/quote': typeof ApiQuoteRoute
 }
@@ -98,7 +116,9 @@ export interface FileRouteTypes {
     | '/contact'
     | '/designs'
     | '/packages'
+    | '/pay'
     | '/portfolio'
+    | '/quickpay'
     | '/services'
     | '/api/quote'
   fileRoutesByTo: FileRoutesByTo
@@ -108,7 +128,9 @@ export interface FileRouteTypes {
     | '/contact'
     | '/designs'
     | '/packages'
+    | '/pay'
     | '/portfolio'
+    | '/quickpay'
     | '/services'
     | '/api/quote'
   id:
@@ -118,7 +140,9 @@ export interface FileRouteTypes {
     | '/contact'
     | '/designs'
     | '/packages'
+    | '/pay'
     | '/portfolio'
+    | '/quickpay'
     | '/services'
     | '/api/quote'
   fileRoutesById: FileRoutesById
@@ -129,7 +153,9 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   DesignsRoute: typeof DesignsRoute
   PackagesRoute: typeof PackagesRoute
+  PayRoute: typeof PayRoute
   PortfolioRoute: typeof PortfolioRoute
+  QuickpayRoute: typeof QuickpayRoute
   ServicesRoute: typeof ServicesRoute
   ApiQuoteRoute: typeof ApiQuoteRoute
 }
@@ -143,11 +169,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ServicesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/quickpay': {
+      id: '/quickpay'
+      path: '/quickpay'
+      fullPath: '/quickpay'
+      preLoaderRoute: typeof QuickpayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/portfolio': {
       id: '/portfolio'
       path: '/portfolio'
       fullPath: '/portfolio'
       preLoaderRoute: typeof PortfolioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pay': {
+      id: '/pay'
+      path: '/pay'
+      fullPath: '/pay'
+      preLoaderRoute: typeof PayRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/packages': {
@@ -201,7 +241,9 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   DesignsRoute: DesignsRoute,
   PackagesRoute: PackagesRoute,
+  PayRoute: PayRoute,
   PortfolioRoute: PortfolioRoute,
+  QuickpayRoute: QuickpayRoute,
   ServicesRoute: ServicesRoute,
   ApiQuoteRoute: ApiQuoteRoute,
 }
