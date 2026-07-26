@@ -1,15 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import {
-  PayPalScriptProvider,
-  PayPalButtons,
-  PayPalCardFieldsProvider,
-  PayPalNameField,
-  PayPalNumberField,
-  PayPalExpiryField,
-  PayPalCVVField,
-  usePayPalCardFields,
-  usePayPalScriptReducer,
-} from "@paypal/react-paypal-js";
+import { useState } from "react";
+import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import { Lock, ShieldCheck, CreditCard } from "lucide-react";
 import { SiteLayout } from "@/components/SiteLayout";
 
@@ -22,287 +12,9 @@ type Status =
   | { kind: "success"; id: string }
   | { kind: "error"; message: string };
 
-type PayerActions = {
-  createOrder: () => Promise<string>;
-  onApprove: (data: { orderID: string }) => Promise<void>;
-  onError: (err: unknown) => void;
-};
-
-function useOrderActions(
-  amountFixed: string,
-  setStatus: (s: Status) => void,
-): PayerActions {
-  return {
-    createOrder: async () => {
-      // Client-side order creation via PayPal JS SDK actions is not available here;
-      // use the REST-less approach through the buttons/cardFields components which
-      // wrap this. This helper is only used by Apple/Google Pay below.
-      throw new Error("createOrder handled by component");
-    },
-    onApprove: async () => {
-      setStatus({ kind: "success", id: "" });
-    },
-    onError: (err) =>
-      setStatus({
-        kind: "error",
-        message: err instanceof Error ? err.message : "Payment failed. Please try again.",
-      }),
-  };
-}
-
-function CardFieldsSubmit({
-  disabled,
-  onSubmitting,
-}: {
-  disabled: boolean;
-  onSubmitting: (v: boolean) => void;
-}) {
-  const { cardFieldsForm } = usePayPalCardFields();
-  const [submitting, setSubmitting] = useState(false);
-
-  const submit = async () => {
-    if (!cardFieldsForm) return;
-    const state = await cardFieldsForm.getState();
-    if (!state.isFormValid) return;
-    setSubmitting(true);
-    onSubmitting(true);
-    try {
-      await cardFieldsForm.submit();
-    } finally {
-      setSubmitting(false);
-      onSubmitting(false);
-    }
-  };
-
-  return (
-    <button
-      type="button"
-      onClick={submit}
-      disabled={disabled || submitting}
-      className="mt-4 w-full rounded-xl bg-[color:var(--brand)] py-4 font-display text-lg text-white transition hover:opacity-90 disabled:opacity-60"
-    >
-      {submitting ? "Processing…" : "Pay with card"}
-    </button>
-  );
-}
-
-function ApplePayButton({
-  amountFixed,
-  setStatus,
-}: {
-  amountFixed: string;
-  setStatus: (s: Status) => void;
-}) {
-  const [{ isResolved }] = usePayPalScriptReducer();
-  const ref = useRef<HTMLDivElement>(null);
-  const [supported, setSupported] = useState(false);
-
-  useEffect(() => {
-    if (!isResolved) return;
-    const w = window as any;
-    if (!w.paypal?.Applepay || !w.ApplePaySession?.canMakePayments()) return;
-    const applepay = w.paypal.Applepay();
-
-    (async () => {
-      try {
-        const config = await applepay.config();
-        if (!config.isEligible) return;
-        setSupported(true);
-        if (!ref.current) return;
-        ref.current.innerHTML = "";
-        const btn = document.createElement("apple-pay-button") as any;
-        btn.setAttribute("buttonstyle", "black");
-        btn.setAttribute("type", "pay");
-        btn.setAttribute("locale", "en-AU");
-        btn.style.width = "100%";
-        btn.style.height = "48px";
-        btn.style.setProperty("--apple-pay-button-width", "100%");
-        btn.style.setProperty("--apple-pay-button-height", "48px");
-        btn.addEventListener("click", async () => {
-          try {
-            const paymentRequest = {
-              countryCode: "AU",
-              currencyCode: "AUD",
-              merchantCapabilities: ["supports3DS"],
-              supportedNetworks: config.supportedNetworks,
-              total: { label: "Web Solution Sydney", amount: amountFixed, type: "final" },
-            };
-            const session = new w.ApplePaySession(4, paymentRequest);
-            session.onvalidatemerchant = async (event: any) => {
-              try {
-                const merchantSession = await applepay.validateMerchant({
-                  validationUrl: event.validationURL,
-                });
-                session.completeMerchantValidation(merchantSession);
-              } catch (err) {
-                session.abort();
-                setStatus({
-                  kind: "error",
-                  message: err instanceof Error ? err.message : "Apple Pay validation failed",
-                });
-              }
-            };
-            session.onpaymentauthorized = async (event: any) => {
-              try {
-                setStatus({ kind: "processing" });
-                const orderResp = await w.paypal
-                  .Orders?.()
-                  ?.create?.({
-                    intent: "CAPTURE",
-                    purchase_units: [
-                      {
-                        amount: { currency_code: "AUD", value: amountFixed },
-                        description: "Web Solution Sydney — Invoice Payment",
-                      },
-                    ],
-                  });
-                // Fallback: create via Applepay confirm flow
-                const orderId = orderResp?.id;
-                if (!orderId) throw new Error("Unable to create order");
-                await applepay.confirmOrder({
-                  orderId,
-                  token: event.payment.token,
-                  billingContact: event.payment.billingContact,
-                });
-                session.completePayment(w.ApplePaySession.STATUS_SUCCESS);
-                setStatus({ kind: "success", id: orderId });
-              } catch (err) {
-                session.completePayment(w.ApplePaySession.STATUS_FAILURE);
-                setStatus({
-                  kind: "error",
-                  message: err instanceof Error ? err.message : "Apple Pay failed",
-                });
-              }
-            };
-            session.begin();
-          } catch (err) {
-            setStatus({
-              kind: "error",
-              message: err instanceof Error ? err.message : "Apple Pay error",
-            });
-          }
-        });
-        ref.current.appendChild(btn);
-      } catch {
-        /* not eligible */
-      }
-    })();
-  }, [isResolved, amountFixed, setStatus]);
-
-  if (!supported) return null;
-  return (
-    <div className="mb-3">
-      <div ref={ref} />
-    </div>
-  );
-}
-
-function GooglePayButton({
-  amountFixed,
-  setStatus,
-}: {
-  amountFixed: string;
-  setStatus: (s: Status) => void;
-}) {
-  const [{ isResolved }] = usePayPalScriptReducer();
-  const ref = useRef<HTMLDivElement>(null);
-  const [supported, setSupported] = useState(false);
-
-  useEffect(() => {
-    if (!isResolved) return;
-    const w = window as any;
-    if (!w.paypal?.Googlepay || !w.google?.payments?.api) return;
-    const googlepay = w.paypal.Googlepay();
-
-    (async () => {
-      try {
-        const config = await googlepay.config();
-        if (!config.isEligible) return;
-
-        const client = new w.google.payments.api.PaymentsClient({
-          environment: config.environment === "TEST" ? "TEST" : "PRODUCTION",
-        });
-
-        const isReady = await client.isReadyToPay({
-          apiVersion: 2,
-          apiVersionMinor: 0,
-          allowedPaymentMethods: config.allowedPaymentMethods,
-        });
-        if (!isReady.result) return;
-        setSupported(true);
-
-        if (!ref.current) return;
-        ref.current.innerHTML = "";
-        const btn = client.createButton({
-          buttonColor: "black",
-          buttonType: "pay",
-          buttonSizeMode: "fill",
-          onClick: async () => {
-            try {
-              const paymentDataRequest = {
-                apiVersion: 2,
-                apiVersionMinor: 0,
-                allowedPaymentMethods: config.allowedPaymentMethods,
-                merchantInfo: config.merchantInfo,
-                transactionInfo: {
-                  countryCode: config.countryCode ?? "AU",
-                  currencyCode: "AUD",
-                  totalPriceStatus: "FINAL",
-                  totalPrice: amountFixed,
-                },
-              };
-              const paymentData = await client.loadPaymentData(paymentDataRequest);
-              setStatus({ kind: "processing" });
-
-              const orderResp = await fetch("https://api-m.paypal.com/v2/checkout/orders", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  intent: "CAPTURE",
-                  purchase_units: [
-                    {
-                      amount: { currency_code: "AUD", value: amountFixed },
-                      description: "Web Solution Sydney — Invoice Payment",
-                    },
-                  ],
-                }),
-              }).catch(() => null);
-
-              const orderId = orderResp && (await orderResp.json())?.id;
-              if (!orderId) throw new Error("Unable to create order");
-
-              await googlepay.confirmOrder({
-                orderId,
-                paymentMethodData: paymentData.paymentMethodData,
-              });
-              setStatus({ kind: "success", id: orderId });
-            } catch (err) {
-              setStatus({
-                kind: "error",
-                message: err instanceof Error ? err.message : "Google Pay failed",
-              });
-            }
-          },
-        });
-        ref.current.appendChild(btn);
-      } catch {
-        /* not eligible */
-      }
-    })();
-  }, [isResolved, amountFixed, setStatus]);
-
-  if (!supported) return null;
-  return (
-    <div className="mb-3">
-      <div ref={ref} style={{ minHeight: 48 }} />
-    </div>
-  );
-}
-
 export function PaymentPage() {
   const [amount, setAmount] = useState("");
   const [status, setStatus] = useState<Status>({ kind: "idle" });
-  const [cardSubmitting, setCardSubmitting] = useState(false);
 
   const numericAmount = Number(amount);
   const validAmount = Number.isFinite(numericAmount) && numericAmount > 0;
@@ -319,8 +31,8 @@ export function PaymentPage() {
             <h1 className="mt-4 font-display text-5xl md:text-6xl">Secure Invoice Payment</h1>
             <p className="mt-3 text-lg text-muted-foreground">Web Solution Sydney</p>
             <p className="mt-4 text-sm text-muted-foreground">
-              Enter your invoice amount and pay by card, Apple Pay, Google Pay, or PayPal. All
-              payments are encrypted and processed by PayPal.
+              Enter your invoice amount and pay by PayPal, card, Apple Pay, or Google Pay.
+              Eligible wallets appear automatically based on your device.
             </p>
           </div>
 
@@ -364,14 +76,11 @@ export function PaymentPage() {
                     clientId: CLIENT_ID,
                     currency: "AUD",
                     intent: "capture",
-                    components: "buttons,card-fields,applepay,googlepay",
-                    "enable-funding": "card,applepay,googlepay",
+                    components: "buttons",
+                    "enable-funding": "card,paylater",
                   }}
                 >
-                  <div key={amountFixed} className="space-y-3">
-                    <ApplePayButton amountFixed={amountFixed} setStatus={setStatus} />
-                    <GooglePayButton amountFixed={amountFixed} setStatus={setStatus} />
-
+                  <div key={amountFixed}>
                     <PayPalButtons
                       style={{
                         layout: "vertical",
@@ -385,7 +94,10 @@ export function PaymentPage() {
                           intent: "CAPTURE",
                           purchase_units: [
                             {
-                              amount: { currency_code: "AUD", value: amountFixed },
+                              amount: {
+                                currency_code: "AUD",
+                                value: amountFixed,
+                              },
                               description: "Web Solution Sydney — Invoice Payment",
                             },
                           ],
@@ -395,11 +107,15 @@ export function PaymentPage() {
                         setStatus({ kind: "processing" });
                         try {
                           const details = await actions.order?.capture();
-                          setStatus({ kind: "success", id: details?.id || "" });
+                          setStatus({
+                            kind: "success",
+                            id: details?.id || "",
+                          });
                         } catch (err) {
                           setStatus({
                             kind: "error",
-                            message: err instanceof Error ? err.message : "Capture failed",
+                            message:
+                              err instanceof Error ? err.message : "Capture failed",
                           });
                         }
                       }}
@@ -414,46 +130,6 @@ export function PaymentPage() {
                       }
                       onCancel={() => setStatus({ kind: "idle" })}
                     />
-
-                    <div className="pt-4">
-                      <div className="mb-3 text-xs uppercase tracking-widest text-muted-foreground">
-                        Or pay by card
-                      </div>
-                      <PayPalCardFieldsProvider
-                        createOrder={async () => {
-                          // createOrder must return an order id string. Without a server,
-                          // fall back to the buttons flow for order creation is not possible;
-                          // ACDC requires a server-created order. This will surface an error
-                          // if used without a backend endpoint.
-                          throw new Error(
-                            "Card fields require a server-created order. Contact support to complete a card payment.",
-                          );
-                        }}
-                        onApprove={async (data) => {
-                          setStatus({ kind: "success", id: data.orderID });
-                        }}
-                        onError={(err) =>
-                          setStatus({
-                            kind: "error",
-                            message:
-                              err instanceof Error ? err.message : "Card payment failed",
-                          })
-                        }
-                      >
-                        <div className="space-y-3 rounded-xl border border-[color:var(--border)] bg-white p-4">
-                          <PayPalNameField />
-                          <PayPalNumberField />
-                          <div className="grid grid-cols-2 gap-3">
-                            <PayPalExpiryField />
-                            <PayPalCVVField />
-                          </div>
-                        </div>
-                        <CardFieldsSubmit
-                          disabled={status.kind === "processing"}
-                          onSubmitting={setCardSubmitting}
-                        />
-                      </PayPalCardFieldsProvider>
-                    </div>
                   </div>
                 </PayPalScriptProvider>
               )}
