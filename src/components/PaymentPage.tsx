@@ -76,9 +76,10 @@ export function PaymentPage() {
                     clientId: CLIENT_ID,
                     currency: "AUD",
                     intent: "capture",
-                    components: "buttons,googlepay,applepay",
-                    "enable-funding": "card,paylater,googlepay,applepay",
+                    components: "buttons",
+                    "enable-funding": "card,paylater",
                   }}
+
                 >
 
                   <div key={amountFixed}>
