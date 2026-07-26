@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { loadStripe, type Stripe } from "@stripe/stripe-js";
 import {
   Elements,
@@ -27,59 +27,69 @@ type Status =
   | { kind: "success"; id?: string }
   | { kind: "error"; message: string };
 
-function CheckoutForm({ onStatus }: { onStatus: (s: Status) => void }) {
+const MIN_AMOUNT = 1;
+
+function CheckoutForm({
+  amountCents,
+  validAmount,
+  onStatus,
+}: {
+  amountCents: number;
+  validAmount: boolean;
+  onStatus: (s: Status) => void;
+}) {
   const stripe = useStripe();
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [elementsReady, setElementsReady] = useState(false);
+  const createIntent = useServerFn(createPaymentIntent);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Live-update the mounted Elements when the amount changes — no iframe rebuild.
+  useEffect(() => {
+    if (!elements) return;
+    if (amountCents >= MIN_AMOUNT * 100) {
+      elements.update({ amount: amountCents });
+    }
+  }, [elements, amountCents]);
+
+  const confirm = async () => {
     if (!stripe || !elements) return;
-    setSubmitting(true);
     setErrorMsg(null);
     onStatus({ kind: "processing" });
 
-    const { error, paymentIntent } = await stripe.confirmPayment({
-      elements,
-      redirect: "if_required",
-      confirmParams: {
-        return_url: window.location.href,
-      },
-    });
-
-    if (error) {
-      setErrorMsg(error.message ?? "Payment failed");
-      onStatus({ kind: "error", message: error.message ?? "Payment failed" });
-      setSubmitting(false);
+    // Validate & collect payment details from the mounted Elements.
+    const { error: submitError } = await elements.submit();
+    if (submitError) {
+      const msg = submitError.message ?? "Please check your payment details";
+      setErrorMsg(msg);
+      onStatus({ kind: "error", message: msg });
       return;
     }
 
-    if (paymentIntent && paymentIntent.status === "succeeded") {
-      onStatus({ kind: "success", id: paymentIntent.id });
-    } else if (paymentIntent) {
-      onStatus({
-        kind: "error",
-        message: `Payment status: ${paymentIntent.status}`,
-      });
+    // Create the PaymentIntent server-side only now.
+    let clientSecret: string;
+    try {
+      const res = await createIntent({ data: { amount: amountCents / 100 } });
+      clientSecret = res.clientSecret;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Could not start payment";
+      setErrorMsg(msg);
+      onStatus({ kind: "error", message: msg });
+      return;
     }
-    setSubmitting(false);
-  };
-
-  const handleExpressConfirm = async () => {
-    if (!stripe || !elements) return;
-    onStatus({ kind: "processing" });
-    setErrorMsg(null);
 
     const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
+      clientSecret,
       redirect: "if_required",
       confirmParams: { return_url: window.location.href },
     });
 
     if (error) {
-      setErrorMsg(error.message ?? "Payment failed");
-      onStatus({ kind: "error", message: error.message ?? "Payment failed" });
+      const msg = error.message ?? "Payment failed";
+      setErrorMsg(msg);
+      onStatus({ kind: "error", message: msg });
       return;
     }
     if (paymentIntent && paymentIntent.status === "succeeded") {
@@ -89,15 +99,37 @@ function CheckoutForm({ onStatus }: { onStatus: (s: Status) => void }) {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validAmount) {
+      setErrorMsg("Enter an amount to continue");
+      return;
+    }
+    setSubmitting(true);
+    await confirm();
+    setSubmitting(false);
+  };
+
+  const handleExpressConfirm = async () => {
+    if (!validAmount) {
+      setErrorMsg("Enter an amount to continue");
+      return;
+    }
+    await confirm();
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <ExpressCheckoutElement
-        onConfirm={handleExpressConfirm}
-        options={{
-          buttonType: { applePay: "plain", googlePay: "plain" },
-          paymentMethods: { applePay: "always", googlePay: "always", link: "auto" },
-        }}
-      />
+      <div className={elementsReady ? "" : "min-h-[48px]"}>
+        <ExpressCheckoutElement
+          onConfirm={handleExpressConfirm}
+          onReady={() => setElementsReady(true)}
+          options={{
+            buttonType: { applePay: "plain", googlePay: "plain" },
+            paymentMethods: { applePay: "always", googlePay: "always", link: "auto" },
+          }}
+        />
+      </div>
       <div className="flex items-center gap-4">
         <div className="h-px flex-1 bg-[color:var(--border)]" />
         <span className="text-xs uppercase tracking-widest text-muted-foreground">
@@ -105,12 +137,31 @@ function CheckoutForm({ onStatus }: { onStatus: (s: Status) => void }) {
         </span>
         <div className="h-px flex-1 bg-[color:var(--border)]" />
       </div>
-      <PaymentElement
-        options={{
-          layout: "tabs",
-          wallets: { applePay: "never", googlePay: "never" },
-        }}
-      />
+      <div className="relative">
+        {!elementsReady && (
+          <div className="space-y-3 animate-pulse">
+            <div className="h-12 rounded-lg bg-[color:var(--surface)]" />
+            <div className="h-12 rounded-lg bg-[color:var(--surface)]" />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="h-12 rounded-lg bg-[color:var(--surface)]" />
+              <div className="h-12 rounded-lg bg-[color:var(--surface)]" />
+            </div>
+          </div>
+        )}
+        <div
+          className={
+            "transition-opacity duration-300 " +
+            (elementsReady ? "opacity-100" : "opacity-0 absolute inset-0 pointer-events-none")
+          }
+        >
+          <PaymentElement
+            options={{
+              layout: "tabs",
+              wallets: { applePay: "never", googlePay: "never" },
+            }}
+          />
+        </div>
+      </div>
       {errorMsg && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
           {errorMsg}
@@ -118,7 +169,7 @@ function CheckoutForm({ onStatus }: { onStatus: (s: Status) => void }) {
       )}
       <button
         type="submit"
-        disabled={!stripe || submitting}
+        disabled={!stripe || submitting || !validAmount}
         className="flex w-full items-center justify-center gap-2 rounded-xl bg-[color:var(--brand)] py-4 font-display text-lg text-white transition hover:opacity-95 disabled:opacity-60"
       >
         {submitting ? (
@@ -137,49 +188,49 @@ function CheckoutForm({ onStatus }: { onStatus: (s: Status) => void }) {
 
 export function PaymentPage() {
   const [amount, setAmount] = useState("");
+  const [debouncedAmount, setDebouncedAmount] = useState(0);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [loadingIntent, setLoadingIntent] = useState(false);
-  const [intentError, setIntentError] = useState<string | null>(null);
 
   const numericAmount = Number(amount);
-  const validAmount = Number.isFinite(numericAmount) && numericAmount > 0;
-  const amountFixed = validAmount ? numericAmount.toFixed(2) : "0.00";
+  const validAmount = Number.isFinite(numericAmount) && numericAmount >= MIN_AMOUNT;
 
-  const createIntent = useServerFn(createPaymentIntent);
-
-  // Debounced PaymentIntent creation whenever the amount changes.
+  // Debounce amount updates by 300ms — feeds elements.update() without rebuilding.
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    if (!validAmount) {
-      setClientSecret(null);
-      setIntentError(null);
-      return;
-    }
-    let cancelled = false;
-    setLoadingIntent(true);
-    setIntentError(null);
-    setClientSecret(null);
-    const t = setTimeout(async () => {
-      try {
-        const res = await createIntent({ data: { amount: numericAmount } });
-        if (!cancelled) setClientSecret(res.clientSecret);
-      } catch (err) {
-        if (!cancelled)
-          setIntentError(
-            err instanceof Error ? err.message : "Could not start payment",
-          );
-      } finally {
-        if (!cancelled) setLoadingIntent(false);
-      }
-    }, 500);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => {
+      if (validAmount) setDebouncedAmount(Math.round(numericAmount * 100));
+    }, 300);
     return () => {
-      cancelled = true;
-      clearTimeout(t);
+      if (timer.current) clearTimeout(timer.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [amountFixed]);
+  }, [amount, numericAmount, validAmount]);
 
   const stripe = useMemo(() => getStripe(), []);
+
+  // Mount Stripe Elements immediately on page load in Deferred Intent mode.
+  // Use a stable initial amount so the iframe never gets torn down.
+  const elementsOptions = useMemo(
+    () =>
+      ({
+        mode: "payment" as const,
+        currency: "aud",
+        amount: 1000, // placeholder; live-updated via elements.update()
+        appearance: {
+          theme: "stripe" as const,
+          variables: {
+            colorPrimary: "#0092e8",
+            borderRadius: "10px",
+            fontFamily: "Inter, system-ui, sans-serif",
+          },
+        },
+      }),
+    [],
+  );
+
+  const liveAmountCents = validAmount
+    ? Math.round(numericAmount * 100)
+    : debouncedAmount;
 
   return (
     <SiteLayout>
@@ -231,44 +282,19 @@ export function PaymentPage() {
               </div>
 
               {!validAmount && (
-                <div className="rounded-xl border border-dashed border-[color:var(--border)] bg-[color:var(--surface)] p-6 text-center text-sm text-muted-foreground">
+                <div className="mb-6 rounded-xl border border-dashed border-[color:var(--border)] bg-[color:var(--surface)] p-4 text-center text-sm text-muted-foreground">
                   <CreditCard className="mx-auto mb-2 h-5 w-5 text-[color:var(--brand)]" />
-                  Enter an amount above to continue to secure payment.
+                  Enter an amount above to enable payment.
                 </div>
               )}
 
-              {validAmount && loadingIntent && (
-                <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Preparing secure
-                  payment…
-                </div>
-              )}
-
-              {validAmount && intentError && (
-                <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-                  {intentError}
-                </div>
-              )}
-
-              {validAmount && clientSecret && (
-                <Elements
-                  key={clientSecret}
-                  stripe={stripe}
-                  options={{
-                    clientSecret,
-                    appearance: {
-                      theme: "stripe",
-                      variables: {
-                        colorPrimary: "#0092e8",
-                        borderRadius: "10px",
-                        fontFamily: "Inter, system-ui, sans-serif",
-                      },
-                    },
-                  }}
-                >
-                  <CheckoutForm onStatus={setStatus} />
-                </Elements>
-              )}
+              <Elements stripe={stripe} options={elementsOptions}>
+                <CheckoutForm
+                  amountCents={liveAmountCents || 1000}
+                  validAmount={validAmount}
+                  onStatus={setStatus}
+                />
+              </Elements>
 
               {status.kind === "success" && (
                 <div className="mt-6 rounded-xl border border-green-200 bg-green-50 p-5 text-sm text-green-800">
