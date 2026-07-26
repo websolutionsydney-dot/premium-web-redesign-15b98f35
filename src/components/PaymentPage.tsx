@@ -66,12 +66,49 @@ function CheckoutForm({ onStatus }: { onStatus: (s: Status) => void }) {
     setSubmitting(false);
   };
 
+  const handleExpressConfirm = async () => {
+    if (!stripe || !elements) return;
+    onStatus({ kind: "processing" });
+    setErrorMsg(null);
+
+    const { error, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      redirect: "if_required",
+      confirmParams: { return_url: window.location.href },
+    });
+
+    if (error) {
+      setErrorMsg(error.message ?? "Payment failed");
+      onStatus({ kind: "error", message: error.message ?? "Payment failed" });
+      return;
+    }
+    if (paymentIntent && paymentIntent.status === "succeeded") {
+      onStatus({ kind: "success", id: paymentIntent.id });
+    } else if (paymentIntent) {
+      onStatus({ kind: "error", message: `Payment status: ${paymentIntent.status}` });
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <ExpressCheckoutElement
+        onConfirm={handleExpressConfirm}
+        options={{
+          buttonType: { applePay: "pay", googlePay: "pay" },
+          paymentMethods: { applePay: "always", googlePay: "always", link: "auto" },
+        }}
+      />
+      <div className="flex items-center gap-4">
+        <div className="h-px flex-1 bg-[color:var(--border)]" />
+        <span className="text-xs uppercase tracking-widest text-muted-foreground">
+          Or pay by card
+        </span>
+        <div className="h-px flex-1 bg-[color:var(--border)]" />
+      </div>
       <PaymentElement
         options={{
           layout: "tabs",
-          wallets: { applePay: "auto", googlePay: "auto" },
+          wallets: { applePay: "never", googlePay: "never" },
         }}
       />
       {errorMsg && (
