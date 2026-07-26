@@ -94,7 +94,7 @@ function CheckoutForm({ onStatus }: { onStatus: (s: Status) => void }) {
       <ExpressCheckoutElement
         onConfirm={handleExpressConfirm}
         options={{
-          buttonType: { applePay: "pay", googlePay: "pay" },
+          buttonType: { applePay: "plain", googlePay: "plain" },
           paymentMethods: { applePay: "always", googlePay: "always", link: "auto" },
         }}
       />
