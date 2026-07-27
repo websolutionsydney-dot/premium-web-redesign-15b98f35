@@ -128,7 +128,9 @@ function CheckoutForm({
             buttonType: { applePay: "plain", googlePay: "plain" },
             buttonHeight: 48,
             paymentMethods: { applePay: "always", googlePay: "always", link: "never" },
+            layout: { maxColumns: 1, maxRows: 2, overflow: "never" },
           }}
+
         />
       </div>
       <div className="flex items-center gap-4">
