@@ -256,7 +256,7 @@ export function PaymentPage() {
             </p>
           </div>
 
-          <div className="mx-auto mt-14 max-w-xl">
+          <div className="mx-auto mt-14 max-w-3xl">
             <div className="card-soft p-8 md:p-10">
               <label className="block">
                 <span className="eyebrow">Amount (AUD)</span>
