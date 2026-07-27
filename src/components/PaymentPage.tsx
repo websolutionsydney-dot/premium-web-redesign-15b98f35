@@ -126,7 +126,9 @@ function CheckoutForm({
           onReady={() => setElementsReady(true)}
           options={{
             buttonType: { applePay: "plain", googlePay: "plain" },
-            paymentMethods: { applePay: "always", googlePay: "always", link: "auto" },
+            buttonHeight: 48,
+            paymentMethods: { applePay: "always", googlePay: "always", link: "never" },
+            layout: { maxColumns: 2, maxRows: 1, overflow: "never" },
           }}
         />
       </div>
