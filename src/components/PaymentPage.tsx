@@ -191,7 +191,7 @@ function CheckoutForm({
       )}
       <button
         type="submit"
-        disabled={!stripe || submitting || !validAmount || !walletsReady}
+        disabled={!stripe || submitting || !validAmount || !paymentElementReady}
         className="flex w-full items-center justify-center gap-2 rounded-xl bg-[color:var(--brand)] py-4 font-display text-lg text-white transition hover:opacity-95 disabled:opacity-60"
       >
         {submitting ? (
