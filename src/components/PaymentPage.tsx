@@ -144,7 +144,7 @@ function CheckoutForm({
           options={{
             buttonType: { applePay: "plain", googlePay: "plain" },
             buttonHeight: 48,
-            paymentMethods: { applePay: "always", googlePay: "always", link: "never" },
+            paymentMethods: { applePay: "auto", googlePay: "auto", link: "never" },
             paymentMethodOrder: ["applePay", "googlePay"],
           }}
 
