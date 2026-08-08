@@ -210,11 +210,20 @@ function CheckoutForm({
 
 export function PaymentPage() {
   const [amount, setAmount] = useState("");
+  const [payerName, setPayerName] = useState("");
+  const [payerEmail, setPayerEmail] = useState("");
+  const payerNameRef = useRef("");
+  const payerEmailRef = useRef("");
   const [debouncedAmount, setDebouncedAmount] = useState(0);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [preparedIntent, setPreparedIntent] = useState<PreparedIntent | null>(null);
   const [intentPreparing, setIntentPreparing] = useState(false);
   const createIntent = useServerFn(createPaymentIntent);
+
+  useEffect(() => {
+    payerNameRef.current = payerName;
+    payerEmailRef.current = payerEmail;
+  }, [payerName, payerEmail]);
 
   const numericAmount = Number(amount);
   const validAmount = Number.isFinite(numericAmount) && numericAmount >= MIN_AMOUNT;
@@ -234,6 +243,7 @@ export function PaymentPage() {
   const stripe = useMemo(() => getStripe(), []);
   const preparedIntentRef = useRef<PreparedIntent | null>(null);
   const prewarmRequestRef = useRef(0);
+  const lastPayerKeyRef = useRef("");
 
   useEffect(() => {
     preparedIntentRef.current = preparedIntent;
@@ -241,7 +251,13 @@ export function PaymentPage() {
 
   const createIntentForAmount = useCallback(
     async (amountCents: number): Promise<PreparedIntent> => {
-      const res = await createIntent({ data: { amount: amountCents / 100 } });
+      const res = await createIntent({
+        data: {
+          amount: amountCents / 100,
+          name: payerNameRef.current,
+          email: payerEmailRef.current,
+        },
+      });
       return {
         amountCents,
         clientSecret: res.clientSecret,
@@ -276,11 +292,13 @@ export function PaymentPage() {
     }
 
     const amountCents = Math.round(numericAmount * 100);
+    const payerKey = `${payerName.trim()}|${payerEmail.trim()}`;
     const cached = preparedIntentRef.current;
-    if (cached?.amountCents === amountCents) {
+    if (cached?.amountCents === amountCents && lastPayerKeyRef.current === payerKey) {
       setIntentPreparing(false);
       return;
     }
+    lastPayerKeyRef.current = payerKey;
 
     const requestId = prewarmRequestRef.current + 1;
     prewarmRequestRef.current = requestId;
@@ -306,7 +324,7 @@ export function PaymentPage() {
     }, 450);
 
     return () => clearTimeout(timeout);
-  }, [createIntentForAmount, numericAmount, validAmount]);
+  }, [createIntentForAmount, numericAmount, validAmount, payerName, payerEmail]);
 
   // Mount Stripe Elements immediately on page load in Deferred Intent mode.
   // Use a stable initial amount so the iframe never gets torn down.
@@ -372,6 +390,33 @@ export function PaymentPage() {
                   />
                 </div>
               </label>
+
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <label className="block">
+                  <span className="eyebrow">Full name</span>
+                  <input
+                    type="text"
+                    autoComplete="name"
+                    placeholder="Jane Smith"
+                    value={payerName}
+                    onChange={(e) => setPayerName(e.target.value)}
+                    className="mt-3 w-full rounded-xl border border-[color:var(--border)] bg-white px-4 py-3 text-[color:var(--ink)] outline-none transition focus:border-[color:var(--brand)] focus:ring-4 focus:ring-[color:var(--brand-soft)]"
+                  />
+                </label>
+                <label className="block">
+                  <span className="eyebrow">Email</span>
+                  <input
+                    type="email"
+                    autoComplete="email"
+                    placeholder="you@example.com"
+                    value={payerEmail}
+                    onChange={(e) => setPayerEmail(e.target.value)}
+                    className="mt-3 w-full rounded-xl border border-[color:var(--border)] bg-white px-4 py-3 text-[color:var(--ink)] outline-none transition focus:border-[color:var(--brand)] focus:ring-4 focus:ring-[color:var(--brand-soft)]"
+                  />
+                </label>
+              </div>
+
+
 
               <div className="my-8 flex items-center gap-4">
                 <div className="h-px flex-1 bg-[color:var(--border)]" />
