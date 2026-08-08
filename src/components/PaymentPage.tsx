@@ -323,7 +323,7 @@ export function PaymentPage() {
     }, 450);
 
     return () => clearTimeout(timeout);
-  }, [createIntentForAmount, numericAmount, validAmount]);
+  }, [createIntentForAmount, numericAmount, validAmount, payerName, payerEmail]);
 
   // Mount Stripe Elements immediately on page load in Deferred Intent mode.
   // Use a stable initial amount so the iframe never gets torn down.
