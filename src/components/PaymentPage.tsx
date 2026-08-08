@@ -76,43 +76,47 @@ function CheckoutForm({
     setErrorMsg(null);
     onStatus({ kind: "processing" });
 
-    // Validate & collect payment details from the mounted Elements.
-    const { error: submitError } = await elements.submit();
-    if (submitError) {
-      const msg = submitError.message ?? "Please check your payment details";
-      setErrorMsg(msg);
-      onStatus({ kind: "error", message: msg });
-      return;
-    }
-
-    // Create the PaymentIntent server-side only now.
-    let intent: PreparedIntent;
     try {
-      intent = await ensureIntent(amountCents);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Could not start payment";
-      setErrorMsg(msg);
-      onStatus({ kind: "error", message: msg });
-      return;
-    }
+      // Validate & collect payment details from the mounted Elements.
+      const { error: submitError } = await elements.submit();
+      if (submitError) {
+        const msg = submitError.message ?? "Please check your payment details";
+        setErrorMsg(msg);
+        onStatus({ kind: "error", message: msg });
+        return;
+      }
 
-    const { error, paymentIntent } = await stripe.confirmPayment({
-      elements,
-      clientSecret: intent.clientSecret,
-      redirect: "if_required",
-      confirmParams: { return_url: window.location.href },
-    });
+      // Create the PaymentIntent server-side only now.
+      let intent: PreparedIntent;
+      try {
+        intent = await ensureIntent(amountCents);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Could not start payment";
+        setErrorMsg(msg);
+        onStatus({ kind: "error", message: msg });
+        return;
+      }
 
-    if (error) {
-      const msg = error.message ?? "Payment failed";
-      setErrorMsg(msg);
-      onStatus({ kind: "error", message: msg });
-      return;
-    }
-    if (paymentIntent && paymentIntent.status === "succeeded") {
-      onStatus({ kind: "success", id: paymentIntent.id });
-    } else if (paymentIntent) {
-      onStatus({ kind: "error", message: `Payment status: ${paymentIntent.status}` });
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        clientSecret: intent.clientSecret,
+        redirect: "if_required",
+        confirmParams: { return_url: window.location.href },
+      });
+
+      if (error) {
+        const msg = error.message ?? "Payment failed";
+        setErrorMsg(msg);
+        onStatus({ kind: "error", message: msg });
+        return;
+      }
+      if (paymentIntent && paymentIntent.status === "succeeded") {
+        onStatus({ kind: "success", id: paymentIntent.id });
+      } else if (paymentIntent) {
+        onStatus({ kind: "error", message: `Payment status: ${paymentIntent.status}` });
+      }
+    } finally {
+      confirmingRef.current = false;
     }
   };
 
