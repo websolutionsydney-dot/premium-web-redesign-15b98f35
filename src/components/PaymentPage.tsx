@@ -334,6 +334,7 @@ export function PaymentPage() {
         mode: "payment" as const,
         currency: "aud",
         amount: 1000, // placeholder; live-updated via elements.update()
+        setupFutureUsage: "off_session" as const,
         appearance: {
           theme: "stripe" as const,
           variables: {
