@@ -241,7 +241,13 @@ export function PaymentPage() {
 
   const createIntentForAmount = useCallback(
     async (amountCents: number): Promise<PreparedIntent> => {
-      const res = await createIntent({ data: { amount: amountCents / 100 } });
+      const res = await createIntent({
+        data: {
+          amount: amountCents / 100,
+          name: payerNameRef.current,
+          email: payerEmailRef.current,
+        },
+      });
       return {
         amountCents,
         clientSecret: res.clientSecret,
