@@ -284,7 +284,8 @@ export function PaymentPage() {
 
       const next = await createIntentForAmount(amountCents);
       preparedIntentRef.current = next;
-      setPreparedIntent(next);
+      // Do NOT setState here — a re-render mid-confirmation can tear down the
+      // Stripe overlay (PayTo / wallet) before the customer authorises.
       return next;
     },
     [createIntentForAmount],
@@ -293,6 +294,8 @@ export function PaymentPage() {
   // Pre-create the PaymentIntent in the background after the amount settles.
   // This keeps Google Pay from waiting on a backend round trip after the wallet is approved.
   useEffect(() => {
+    // Freeze all background work while a confirmation overlay is open.
+    if (confirmingRef.current) return;
     if (!validAmount) {
       prewarmRequestRef.current += 1;
       preparedIntentRef.current = null;
