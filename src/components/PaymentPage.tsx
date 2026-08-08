@@ -454,6 +454,7 @@ export function PaymentPage() {
                   validAmount={validAmount}
                   intentPreparing={intentPreparing}
                   preparedIntent={preparedIntent}
+                  confirmingRef={confirmingRef}
                   ensureIntent={ensureIntent}
                   onStatus={setStatus}
                 />
