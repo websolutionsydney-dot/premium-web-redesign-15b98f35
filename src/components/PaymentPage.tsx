@@ -210,11 +210,20 @@ function CheckoutForm({
 
 export function PaymentPage() {
   const [amount, setAmount] = useState("");
+  const [payerName, setPayerName] = useState("");
+  const [payerEmail, setPayerEmail] = useState("");
+  const payerNameRef = useRef("");
+  const payerEmailRef = useRef("");
   const [debouncedAmount, setDebouncedAmount] = useState(0);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [preparedIntent, setPreparedIntent] = useState<PreparedIntent | null>(null);
   const [intentPreparing, setIntentPreparing] = useState(false);
   const createIntent = useServerFn(createPaymentIntent);
+
+  useEffect(() => {
+    payerNameRef.current = payerName;
+    payerEmailRef.current = payerEmail;
+  }, [payerName, payerEmail]);
 
   const numericAmount = Number(amount);
   const validAmount = Number.isFinite(numericAmount) && numericAmount >= MIN_AMOUNT;
