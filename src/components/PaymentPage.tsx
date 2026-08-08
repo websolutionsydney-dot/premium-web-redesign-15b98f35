@@ -243,6 +243,7 @@ export function PaymentPage() {
   const stripe = useMemo(() => getStripe(), []);
   const preparedIntentRef = useRef<PreparedIntent | null>(null);
   const prewarmRequestRef = useRef(0);
+  const lastPayerKeyRef = useRef("");
 
   useEffect(() => {
     preparedIntentRef.current = preparedIntent;
