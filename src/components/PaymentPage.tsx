@@ -291,11 +291,13 @@ export function PaymentPage() {
     }
 
     const amountCents = Math.round(numericAmount * 100);
+    const payerKey = `${payerName.trim()}|${payerEmail.trim()}`;
     const cached = preparedIntentRef.current;
-    if (cached?.amountCents === amountCents) {
+    if (cached?.amountCents === amountCents && lastPayerKeyRef.current === payerKey) {
       setIntentPreparing(false);
       return;
     }
+    lastPayerKeyRef.current = payerKey;
 
     const requestId = prewarmRequestRef.current + 1;
     prewarmRequestRef.current = requestId;
