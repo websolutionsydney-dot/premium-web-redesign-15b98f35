@@ -42,6 +42,7 @@ function CheckoutForm({
   preparedIntent,
   ensureIntent,
   onStatus,
+  confirmingRef,
 }: {
   amountCents: number;
   validAmount: boolean;
@@ -49,6 +50,7 @@ function CheckoutForm({
   preparedIntent: PreparedIntent | null;
   ensureIntent: (amountCents: number) => Promise<PreparedIntent>;
   onStatus: (s: Status) => void;
+  confirmingRef: React.MutableRefObject<boolean>;
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -58,55 +60,63 @@ function CheckoutForm({
   const [paymentElementReady, setPaymentElementReady] = useState(false);
 
   // Live-update the mounted Elements when the amount changes — no iframe rebuild.
+  // Never update while a confirmation (PayTo / wallet overlay) is in flight.
   useEffect(() => {
     if (!elements) return;
+    if (confirmingRef.current) return;
     if (amountCents >= MIN_AMOUNT * 100) {
       elements.update({ amount: amountCents });
     }
-  }, [elements, amountCents]);
+  }, [elements, amountCents, confirmingRef]);
 
   const confirm = async () => {
     if (!stripe || !elements) return;
+    if (confirmingRef.current) return;
+    confirmingRef.current = true;
     setErrorMsg(null);
     onStatus({ kind: "processing" });
 
-    // Validate & collect payment details from the mounted Elements.
-    const { error: submitError } = await elements.submit();
-    if (submitError) {
-      const msg = submitError.message ?? "Please check your payment details";
-      setErrorMsg(msg);
-      onStatus({ kind: "error", message: msg });
-      return;
-    }
-
-    // Create the PaymentIntent server-side only now.
-    let intent: PreparedIntent;
     try {
-      intent = await ensureIntent(amountCents);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Could not start payment";
-      setErrorMsg(msg);
-      onStatus({ kind: "error", message: msg });
-      return;
-    }
+      // Validate & collect payment details from the mounted Elements.
+      const { error: submitError } = await elements.submit();
+      if (submitError) {
+        const msg = submitError.message ?? "Please check your payment details";
+        setErrorMsg(msg);
+        onStatus({ kind: "error", message: msg });
+        return;
+      }
 
-    const { error, paymentIntent } = await stripe.confirmPayment({
-      elements,
-      clientSecret: intent.clientSecret,
-      redirect: "if_required",
-      confirmParams: { return_url: window.location.href },
-    });
+      // Create the PaymentIntent server-side only now.
+      let intent: PreparedIntent;
+      try {
+        intent = await ensureIntent(amountCents);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Could not start payment";
+        setErrorMsg(msg);
+        onStatus({ kind: "error", message: msg });
+        return;
+      }
 
-    if (error) {
-      const msg = error.message ?? "Payment failed";
-      setErrorMsg(msg);
-      onStatus({ kind: "error", message: msg });
-      return;
-    }
-    if (paymentIntent && paymentIntent.status === "succeeded") {
-      onStatus({ kind: "success", id: paymentIntent.id });
-    } else if (paymentIntent) {
-      onStatus({ kind: "error", message: `Payment status: ${paymentIntent.status}` });
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        clientSecret: intent.clientSecret,
+        redirect: "if_required",
+        confirmParams: { return_url: window.location.href },
+      });
+
+      if (error) {
+        const msg = error.message ?? "Payment failed";
+        setErrorMsg(msg);
+        onStatus({ kind: "error", message: msg });
+        return;
+      }
+      if (paymentIntent && paymentIntent.status === "succeeded") {
+        onStatus({ kind: "success", id: paymentIntent.id });
+      } else if (paymentIntent) {
+        onStatus({ kind: "error", message: `Payment status: ${paymentIntent.status}` });
+      }
+    } finally {
+      confirmingRef.current = false;
     }
   };
 
@@ -219,6 +229,7 @@ export function PaymentPage() {
   const [preparedIntent, setPreparedIntent] = useState<PreparedIntent | null>(null);
   const [intentPreparing, setIntentPreparing] = useState(false);
   const createIntent = useServerFn(createPaymentIntent);
+  const confirmingRef = useRef(false);
 
   useEffect(() => {
     payerNameRef.current = payerName;
@@ -274,7 +285,8 @@ export function PaymentPage() {
 
       const next = await createIntentForAmount(amountCents);
       preparedIntentRef.current = next;
-      setPreparedIntent(next);
+      // Do NOT setState here — a re-render mid-confirmation can tear down the
+      // Stripe overlay (PayTo / wallet) before the customer authorises.
       return next;
     },
     [createIntentForAmount],
@@ -283,6 +295,8 @@ export function PaymentPage() {
   // Pre-create the PaymentIntent in the background after the amount settles.
   // This keeps Google Pay from waiting on a backend round trip after the wallet is approved.
   useEffect(() => {
+    // Freeze all background work while a confirmation overlay is open.
+    if (confirmingRef.current) return;
     if (!validAmount) {
       prewarmRequestRef.current += 1;
       preparedIntentRef.current = null;
@@ -440,6 +454,7 @@ export function PaymentPage() {
                   validAmount={validAmount}
                   intentPreparing={intentPreparing}
                   preparedIntent={preparedIntent}
+                  confirmingRef={confirmingRef}
                   ensureIntent={ensureIntent}
                   onStatus={setStatus}
                 />
