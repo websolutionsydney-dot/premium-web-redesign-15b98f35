@@ -388,6 +388,33 @@ export function PaymentPage() {
                 </div>
               </label>
 
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <label className="block">
+                  <span className="eyebrow">Full name</span>
+                  <input
+                    type="text"
+                    autoComplete="name"
+                    placeholder="Jane Smith"
+                    value={payerName}
+                    onChange={(e) => setPayerName(e.target.value)}
+                    className="mt-3 w-full rounded-xl border border-[color:var(--border)] bg-white px-4 py-3 text-[color:var(--ink)] outline-none transition focus:border-[color:var(--brand)] focus:ring-4 focus:ring-[color:var(--brand-soft)]"
+                  />
+                </label>
+                <label className="block">
+                  <span className="eyebrow">Email</span>
+                  <input
+                    type="email"
+                    autoComplete="email"
+                    placeholder="you@example.com"
+                    value={payerEmail}
+                    onChange={(e) => setPayerEmail(e.target.value)}
+                    className="mt-3 w-full rounded-xl border border-[color:var(--border)] bg-white px-4 py-3 text-[color:var(--ink)] outline-none transition focus:border-[color:var(--brand)] focus:ring-4 focus:ring-[color:var(--brand-soft)]"
+                  />
+                </label>
+              </div>
+
+
+
               <div className="my-8 flex items-center gap-4">
                 <div className="h-px flex-1 bg-[color:var(--border)]" />
                 <span className="text-xs uppercase tracking-widest text-muted-foreground">
