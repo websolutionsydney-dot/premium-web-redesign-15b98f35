@@ -23,7 +23,6 @@ function getStripe() {
 
 type Status =
   | { kind: "idle" }
-  | { kind: "processing" }
   | { kind: "success"; id?: string }
   | { kind: "error"; message: string };
 
@@ -54,7 +53,6 @@ function CheckoutForm({
 }) {
   const stripe = useStripe();
   const elements = useElements();
-  const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [walletsReady, setWalletsReady] = useState(false);
   const [paymentElementReady, setPaymentElementReady] = useState(false);
@@ -73,8 +71,6 @@ function CheckoutForm({
     if (!stripe || !elements) return;
     if (confirmingRef.current) return;
     confirmingRef.current = true;
-    setErrorMsg(null);
-    onStatus({ kind: "processing" });
 
     try {
       // Validate & collect payment details from the mounted Elements.
@@ -100,8 +96,8 @@ function CheckoutForm({
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         clientSecret: intent.clientSecret,
-        redirect: "if_required",
         confirmParams: { return_url: window.location.href },
+        redirect: "if_required",
       });
 
       if (error) {
@@ -126,9 +122,7 @@ function CheckoutForm({
       setErrorMsg("Enter an amount to continue");
       return;
     }
-    setSubmitting(true);
     await confirm();
-    setSubmitting(false);
   };
 
   const handleExpressConfirm = async () => {
@@ -201,18 +195,10 @@ function CheckoutForm({
       )}
       <button
         type="submit"
-        disabled={!stripe || submitting || !validAmount || !paymentElementReady}
+        disabled={!stripe || !validAmount || !paymentElementReady}
         className="flex w-full items-center justify-center gap-2 rounded-xl bg-[color:var(--brand)] py-4 font-display text-lg text-white transition hover:opacity-95 disabled:opacity-60"
       >
-        {submitting ? (
-          <>
-            <Loader2 className="h-5 w-5 animate-spin" /> Processing…
-          </>
-        ) : (
-          <>
-            <Lock className="h-4 w-4" /> Pay securely
-          </>
-        )}
+        <Lock className="h-4 w-4" /> Pay securely
       </button>
     </form>
   );
