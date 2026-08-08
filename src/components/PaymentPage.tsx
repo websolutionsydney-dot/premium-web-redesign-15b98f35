@@ -309,17 +309,19 @@ export function PaymentPage() {
     const timeout = setTimeout(() => {
       void createIntentForAmount(amountCents)
         .then((next) => {
-          if (prewarmRequestRef.current !== requestId) return;
+          if (prewarmRequestRef.current !== requestId || confirmingRef.current) return;
           preparedIntentRef.current = next;
           setPreparedIntent(next);
         })
         .catch(() => {
-          if (prewarmRequestRef.current !== requestId) return;
+          if (prewarmRequestRef.current !== requestId || confirmingRef.current) return;
           preparedIntentRef.current = null;
           setPreparedIntent(null);
         })
         .finally(() => {
-          if (prewarmRequestRef.current === requestId) setIntentPreparing(false);
+          if (prewarmRequestRef.current === requestId && !confirmingRef.current) {
+            setIntentPreparing(false);
+          }
         });
     }, 450);
 
