@@ -8,13 +8,13 @@ export const Route = createFileRoute("/pay")({
       {
         name: "description",
         content:
-          "Pay your Web Solution Sydney invoice securely with credit or debit card via PayPal.",
+          "Pay your Web Solution Sydney invoice securely via Stripe hosted checkout.",
       },
       { name: "robots", content: "noindex" },
       { property: "og:title", content: "Secure Invoice Payment — Web Solution Sydney" },
       {
         property: "og:description",
-        content: "Pay your invoice securely by card. Powered by PayPal.",
+        content: "Pay your invoice securely via Stripe hosted checkout.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -22,3 +22,4 @@ export const Route = createFileRoute("/pay")({
   }),
   component: PaymentPage,
 });
+
