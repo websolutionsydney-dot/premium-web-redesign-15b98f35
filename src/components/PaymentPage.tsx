@@ -42,6 +42,7 @@ function CheckoutForm({
   preparedIntent,
   ensureIntent,
   onStatus,
+  confirmingRef,
 }: {
   amountCents: number;
   validAmount: boolean;
@@ -49,6 +50,7 @@ function CheckoutForm({
   preparedIntent: PreparedIntent | null;
   ensureIntent: (amountCents: number) => Promise<PreparedIntent>;
   onStatus: (s: Status) => void;
+  confirmingRef: React.MutableRefObject<boolean>;
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -58,15 +60,19 @@ function CheckoutForm({
   const [paymentElementReady, setPaymentElementReady] = useState(false);
 
   // Live-update the mounted Elements when the amount changes — no iframe rebuild.
+  // Never update while a confirmation (PayTo / wallet overlay) is in flight.
   useEffect(() => {
     if (!elements) return;
+    if (confirmingRef.current) return;
     if (amountCents >= MIN_AMOUNT * 100) {
       elements.update({ amount: amountCents });
     }
-  }, [elements, amountCents]);
+  }, [elements, amountCents, confirmingRef]);
 
   const confirm = async () => {
     if (!stripe || !elements) return;
+    if (confirmingRef.current) return;
+    confirmingRef.current = true;
     setErrorMsg(null);
     onStatus({ kind: "processing" });
 
