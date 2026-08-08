@@ -229,6 +229,7 @@ export function PaymentPage() {
   const [preparedIntent, setPreparedIntent] = useState<PreparedIntent | null>(null);
   const [intentPreparing, setIntentPreparing] = useState(false);
   const createIntent = useServerFn(createPaymentIntent);
+  const confirmingRef = useRef(false);
 
   useEffect(() => {
     payerNameRef.current = payerName;
